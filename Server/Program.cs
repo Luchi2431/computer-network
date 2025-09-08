@@ -2,6 +2,7 @@
 using System.Net.Sockets;
 using System.Text;
 
+//
 //Kreiranje uticnice za prijem datagrama
 Socket recvSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
 
