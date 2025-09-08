@@ -1,8 +1,10 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using Server;
 
-//
+//Dictionary string Korisnicko ime - Menadzer projekta i listom objekata klase ZadatakProjekta
+Dictionary<string, ZadatakProjekta> menadgerAndProjects = new Dictionary<string, ZadatakProjekta>();
 //Kreiranje uticnice za prijem datagrama
 Socket recvSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
 
