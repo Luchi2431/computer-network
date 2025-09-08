@@ -3,7 +3,11 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
-Console.WriteLine("Hello, World!");
+System.Console.WriteLine("Unesite svoje korisnicko ime:");
+string? korisnik = Console.ReadLine();
+
+
+
 
 //kreiranje uticnice za slanje podataka
 Socket sendSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
@@ -12,7 +16,7 @@ Socket sendSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, Pro
 IPEndPoint recvEndPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 27015);
 
 //Poruka za slanje
-string meesage = "Ide gas";
+string meesage = $"MENADZER:[{korisnik}]";
 byte[] messageBytes = Encoding.UTF8.GetBytes(meesage);
 
 try
