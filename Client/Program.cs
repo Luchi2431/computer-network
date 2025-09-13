@@ -66,6 +66,49 @@ class Manadzer
             System.Console.WriteLine("Zadatak poslat serveru");
             tcpClient.Close();
         }
+        //PREGLED ZADATKA
+        string pregledPoruke = $"PREGLED:{korisnickoIme}";
+        udpClientSocket.SendTo(Encoding.UTF8.GetBytes(pregledPoruke), serverEP);
+
+        received = udpClientSocket.ReceiveFrom(buffer, ref remoteEP);
+        string tasksStr = Encoding.UTF8.GetString(buffer, 0, received);
+
+        System.Console.WriteLine("\n Pregled zadataka 'U Toku':");
+        //Razdeli string na delove i prikazi zadatke
+        string[] lines = tasksStr.Split("\n");
+        foreach (var line in lines)
+        {
+            if (string.IsNullOrWhiteSpace(line)) continue;
+
+            var parts = line.Split("|");
+            string naziv = parts[0];
+            string zaposleni = parts[1];
+            DateTime rok = DateTime.Parse(parts[2]);
+            int prioritet = int.Parse(parts[3]);
+
+            int daysLeft = (rok - DateTime.Now).Days;
+            if (daysLeft < 2)
+            {
+                Console.BackgroundColor = ConsoleColor.Yellow;
+                System.Console.WriteLine($"!!!{naziv} za {zaposleni} (rok: {rok:yyyy-MM-dd}, ostalo {daysLeft} dana)");
+                Console.ResetColor();
+                if (prioritet < 1)
+                {
+                    System.Console.WriteLine("Unesite novi rok u formatu (yyyy-MM-dd)");
+                    string newRok = Console.ReadLine() ?? string.Empty;
+                    if (!string.IsNullOrEmpty(newRok))
+                    {
+                        string produzenje = $"PRODUZENJE:{naziv}:{newRok}";
+                        udpClientSocket.SendTo(Encoding.UTF8.GetBytes(produzenje), serverEP);
+                    }
+
+                }
+            }
+            else
+            {
+                System.Console.WriteLine($"{naziv} za {zaposleni} (rok: {rok:yyyy-MM-dd})");
+            }
+        }
         udpClientSocket.Close();
     }
 }

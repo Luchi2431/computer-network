@@ -81,8 +81,43 @@ class KolaborativniServis
                 else if (message.StartsWith("PREGLED:"))
                 {
                     //Menadzer trazi pregled zadataka
+                    string korisnickoIme = message.Split(':')[1];
+                    if (!zadaci.ContainsKey(korisnickoIme) || zadaci[korisnickoIme].Count == 0)
+                    {
+                        string response = "Nema zadataka u toku";
+                        udpServer.SendTo(Encoding.UTF8.GetBytes(response), remoteUdpEndPoint);
+                    }
+                    //Kreiramo string sa svim zadacima u toku
+                    StringBuilder sb = new StringBuilder();
+                    foreach (var zad in zadaci[korisnickoIme])
+                    {
+                        if (zad.Status == Shared.Status.UToku)
+                        {
+                            sb.AppendLine($"{zad.Naziv}|{zad.Zaposleni}|{zad.Rok:yyyy-MM-dd}|{zad.Prioritet}");
+                            System.Console.WriteLine(sb.ToString());
+                        }
+                    }
+                    udpServer.SendTo(Encoding.UTF8.GetBytes(sb.ToString()), remoteUdpEndPoint);
+                }
+                else if (message.StartsWith("PRODUZENJE:"))
+                {
+                    string[] parts = message.Split(":");
+                    if (parts.Length == 3)
+                    {
+                        //Podeli string na delove i upisi rok u taj zadatak koji hoces da produzis
+                        string nazivZadatka = parts[1];
+                        DateTime newRok = DateTime.Parse(parts[2]);
+                        foreach (var pair in zadaci)
+                        {
+                            var zad = pair.Value.FirstOrDefault(z => z.Naziv == nazivZadatka);
+                            if (zad != null)
+                            {
+                                zad.Rok = newRok;
+                                System.Console.WriteLine($"Rok zadatka {nazivZadatka} produzen na {newRok:yyyy-MM-dd}");
+                            }
 
-
+                        }
+                    }
                 }
             }
         }
