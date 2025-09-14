@@ -92,6 +92,7 @@ class Manadzer
                 Console.BackgroundColor = ConsoleColor.Yellow;
                 System.Console.WriteLine($"!!!{naziv} za {zaposleni} (rok: {rok:yyyy-MM-dd}, ostalo {daysLeft} dana)");
                 Console.ResetColor();
+                //Slanje zahteva za promenu roka isteka zadatka
                 if (prioritet < 1)
                 {
                     System.Console.WriteLine("Unesite novi rok u formatu (yyyy-MM-dd)");

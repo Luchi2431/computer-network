@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "Client\Client.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shared", "Shared\Shared.csproj", "{94BED989-8577-4E02-89E9-59C4B50D0552}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zaposleni", "Zaposleni\Zaposleni.csproj", "{81967E95-C567-4D55-B300-378E5BAB0138}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +57,18 @@ Global
 		{94BED989-8577-4E02-89E9-59C4B50D0552}.Release|x64.Build.0 = Release|Any CPU
 		{94BED989-8577-4E02-89E9-59C4B50D0552}.Release|x86.ActiveCfg = Release|Any CPU
 		{94BED989-8577-4E02-89E9-59C4B50D0552}.Release|x86.Build.0 = Release|Any CPU
+		{81967E95-C567-4D55-B300-378E5BAB0138}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{81967E95-C567-4D55-B300-378E5BAB0138}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{81967E95-C567-4D55-B300-378E5BAB0138}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{81967E95-C567-4D55-B300-378E5BAB0138}.Debug|x64.Build.0 = Debug|Any CPU
+		{81967E95-C567-4D55-B300-378E5BAB0138}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{81967E95-C567-4D55-B300-378E5BAB0138}.Debug|x86.Build.0 = Debug|Any CPU
+		{81967E95-C567-4D55-B300-378E5BAB0138}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{81967E95-C567-4D55-B300-378E5BAB0138}.Release|Any CPU.Build.0 = Release|Any CPU
+		{81967E95-C567-4D55-B300-378E5BAB0138}.Release|x64.ActiveCfg = Release|Any CPU
+		{81967E95-C567-4D55-B300-378E5BAB0138}.Release|x64.Build.0 = Release|Any CPU
+		{81967E95-C567-4D55-B300-378E5BAB0138}.Release|x86.ActiveCfg = Release|Any CPU
+		{81967E95-C567-4D55-B300-378E5BAB0138}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

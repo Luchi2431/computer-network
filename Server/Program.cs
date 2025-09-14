@@ -1,132 +1,202 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Collections.Generic;
+using System.Linq;
 using Server;
 
-
-
-class KolaborativniServis
+class Program
 {
-    static Dictionary<string, List<ZadatakProjekta>> zadaci = new Dictionary<string, List<ZadatakProjekta>>();
-
     static void Main()
     {
-        int udpPort = 9000;
+        // UDP deo
+        Socket udpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+        IPEndPoint udpEndPoint = new IPEndPoint(IPAddress.Any, 9000);
+        udpSocket.Bind(udpEndPoint);
+
+        // TCP deo
         int tcpPort = 10000;
-
-        //Kreiranje udp Socketa
-        Socket udpServer = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-        //Povezivanje uticnice sa bilo kojom adresom na lokalnom racunaru i portom 27015
-        IPEndPoint localUdpEndPoint = new IPEndPoint(IPAddress.Any, udpPort);
-        udpServer.Bind(localUdpEndPoint);
-        System.Console.WriteLine($"UDP Server pokrenut na portu {udpPort}...");
-
-        // TCP socket za prijem zadataka
         Socket tcpListener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-        IPEndPoint localTcpEndPoint = new IPEndPoint(IPAddress.Any, tcpPort);
-        tcpListener.Bind(localTcpEndPoint);
-        tcpListener.Listen(5);
-        System.Console.WriteLine($"TCP Server pokrenut na portu {tcpPort}");
+        tcpListener.Bind(new IPEndPoint(IPAddress.Any, 10000)); // slobodan port
+        tcpListener.Listen(10);
 
-        //bafer za prijem podataka
+
+        Console.WriteLine($"UDP server na portu 9000, TCP server na portu {tcpPort}");
+
+        // Za praćenje TCP klijenata
+        List<Socket> tcpClients = new List<Socket>();
+
+        // Mapiranje korisnika -> zadaci
+        Dictionary<string, List<ZadatakProjekta>> zadaci = new Dictionary<string, List<ZadatakProjekta>>();
+
+        // Mapiranje TCP socket -> korisnickoIme
+        Dictionary<Socket, string> tcpClientUser = new Dictionary<Socket, string>();
+
+        // Privremeno čuvamo korisnika koji je poslao MENADZER: preko UDP-a,
+        // a tek se posle povezuje na TCP
+        Queue<string> pendingUsers = new Queue<string>();
+
         byte[] recvBuffer = new byte[1024];
-        EndPoint remoteUdpEndPoint = new IPEndPoint(IPAddress.Any, 0);
-        try
+
+        while (true)
         {
-            while (true)
+            // Polling lista
+            List<Socket> checkRead = new List<Socket>();
+            checkRead.Add(udpSocket);
+            checkRead.Add(tcpListener);
+            checkRead.AddRange(tcpClients);
+            try
             {
-                int received = udpServer.ReceiveFrom(recvBuffer, ref remoteUdpEndPoint);
-                string message = Encoding.UTF8.GetString(recvBuffer, 0, received);
-
-                System.Console.WriteLine($"Primljena poruka: {message}");
-
-                if (message.StartsWith("MENADZER:"))
+                Socket.Select(checkRead, null, null, 1000000);
+            }
+            catch (SocketException ex)
+            {
+                if (ex.SocketErrorCode == SocketError.Interrupted)
                 {
-                    string korisnickoIme = message.Split(':')[1];
-                    if (!zadaci.ContainsKey(korisnickoIme))
-                    {
-                        zadaci[korisnickoIme] = new List<ZadatakProjekta>();
-                    }
-
-                    string odgovor = $"TCP_PORT:{tcpPort}";
-                    byte[] odgovorBytes = Encoding.UTF8.GetBytes(odgovor);
-                    udpServer.SendTo(odgovorBytes, remoteUdpEndPoint);
-                    System.Console.WriteLine($"Poslat TCP PORT Korisniku {korisnickoIme}");
-
-                    //Server dobija klijentsku uticnicu
-                    Socket client = tcpListener.Accept();
-                    System.Console.WriteLine("Menadzer povezan preko TCP!");
-
-                    //Primanje zadataka
-                    received = client.Receive(recvBuffer);
-                    string zadatakPoruka = Encoding.UTF8.GetString(recvBuffer, 0, received);
-                    System.Console.WriteLine($"Primljeno preko TCP: {zadatakPoruka}");
-
-                    //Parsiranje poruke i dodavanje u Dictionary
-                    string[] delovi = zadatakPoruka.Split('|');
-                    if (delovi.Length >= 4)
-                    {
-                        ZadatakProjekta zadatak = new ZadatakProjekta
-                        {
-                            Naziv = delovi[0],
-                            Zaposleni = delovi[1],
-                            Rok = DateTime.Parse(delovi[2]),
-                            Prioritet = int.Parse(delovi[3])
-                        };
-                        zadaci[korisnickoIme].Add(zadatak);
-                        System.Console.WriteLine($"Zadatak dodat: {zadatak.Naziv} za {zadatak.Zaposleni}");
-                    }
-                    client.Close();
+                    // samo nastavi sa radom
+                    continue;
                 }
-                else if (message.StartsWith("PREGLED:"))
+                else
                 {
-                    //Menadzer trazi pregled zadataka
-                    string korisnickoIme = message.Split(':')[1];
-                    if (!zadaci.ContainsKey(korisnickoIme) || zadaci[korisnickoIme].Count == 0)
+                    Console.WriteLine($"[GRESKA] {ex.Message}");
+                    continue;
+                }
+            }
+
+
+            foreach (Socket sock in checkRead)
+            {
+                // --- UDP deo ---
+                if (sock == udpSocket)
+                {
+                    EndPoint remoteEP = new IPEndPoint(IPAddress.Any, 0);
+                    int received = udpSocket.ReceiveFrom(recvBuffer, ref remoteEP);
+                    string message = Encoding.UTF8.GetString(recvBuffer, 0, received);
+
+                    if (message.StartsWith("MENADZER:"))
                     {
-                        string response = "Nema zadataka u toku";
-                        udpServer.SendTo(Encoding.UTF8.GetBytes(response), remoteUdpEndPoint);
+                        string korisnickoIme = message.Split(':')[1];
+                        Console.WriteLine($"Novi menadzer: {korisnickoIme}");
+
+                        if (!zadaci.ContainsKey(korisnickoIme))
+                            zadaci[korisnickoIme] = new List<ZadatakProjekta>();
+
+                        // upisujemo korisnika u pendingUsers – on se tek treba povezati na TCP
+                        pendingUsers.Enqueue(korisnickoIme);
+
+                        // odgovaramo koji je TCP port
+                        string odgovor = $"TCP_PORT:{tcpPort}";
+                        udpSocket.SendTo(Encoding.UTF8.GetBytes(odgovor), remoteEP);
                     }
-                    //Kreiramo string sa svim zadacima u toku
-                    StringBuilder sb = new StringBuilder();
-                    foreach (var zad in zadaci[korisnickoIme])
+                    else if (message.StartsWith("PREGLED:"))
                     {
-                        if (zad.Status == Shared.Status.UToku)
+                        string korisnickoIme = message.Split(':')[1];
+
+                        if (!zadaci.ContainsKey(korisnickoIme) || zadaci[korisnickoIme].Count == 0)
                         {
-                            sb.AppendLine($"{zad.Naziv}|{zad.Zaposleni}|{zad.Rok:yyyy-MM-dd}|{zad.Prioritet}");
-                            System.Console.WriteLine(sb.ToString());
+                            string odgovor = "Nema zadataka u toku";
+                            udpSocket.SendTo(Encoding.UTF8.GetBytes(odgovor), remoteEP);
                         }
-                    }
-                    udpServer.SendTo(Encoding.UTF8.GetBytes(sb.ToString()), remoteUdpEndPoint);
-                }
-                else if (message.StartsWith("PRODUZENJE:"))
-                {
-                    string[] parts = message.Split(":");
-                    if (parts.Length == 3)
-                    {
-                        //Podeli string na delove i upisi rok u taj zadatak koji hoces da produzis
-                        string nazivZadatka = parts[1];
-                        DateTime newRok = DateTime.Parse(parts[2]);
-                        foreach (var pair in zadaci)
+                        else
                         {
-                            var zad = pair.Value.FirstOrDefault(z => z.Naziv == nazivZadatka);
-                            if (zad != null)
+                            StringBuilder sb = new StringBuilder();
+                            foreach (var zad in zadaci[korisnickoIme])
                             {
-                                zad.Rok = newRok;
-                                System.Console.WriteLine($"Rok zadatka {nazivZadatka} produzen na {newRok:yyyy-MM-dd}");
+                                sb.AppendLine(zad.ToString());
+                                // svaki zadatak si već čuvao kao string "naziv|zaposleni|rok|prioritet"
                             }
-
+                            udpSocket.SendTo(Encoding.UTF8.GetBytes(sb.ToString()), remoteEP);
                         }
+                    }
+                    else if (message.StartsWith("PRODUZENJE:"))
+                    {
+                        string[] parts = message.Split(":");
+                        if (parts.Length == 3)
+                        {
+                            //Podeli string na delove i upisi rok u taj zadatak koji hoces da produzis
+                            string nazivZadatka = parts[1];
+                            DateTime newRok = DateTime.Parse(parts[2]);
+                            foreach (var pair in zadaci)
+                            {
+                                var zad = pair.Value.FirstOrDefault(z => z.Naziv == nazivZadatka);
+                                if (zad != null)
+                                {
+                                    zad.Rok = newRok;
+                                    System.Console.WriteLine($"Rok zadatka {nazivZadatka} produzen na {newRok:yyyy-MM-dd}");
+                                }
+
+                            }
+                        }
+                    }
+                }
+                // --- TCP Accept ---
+                else if (sock == tcpListener)
+                {
+                    Socket client = tcpListener.Accept();
+                    tcpClients.Add(client);
+
+                    // uparimo ga sa korisnikom koji je poslednji poslao MENADZER preko UDP-a
+                    if (pendingUsers.Count > 0)
+                    {
+                        string korisnickoIme = pendingUsers.Dequeue();
+                        tcpClientUser[client] = korisnickoIme;
+                        Console.WriteLine($"TCP klijent povezan: {korisnickoIme}");
+                    }
+                    else
+                    {
+                        Console.WriteLine("TCP klijent povezan, ali nema pending korisnika!");
+                    }
+                }
+                // --- TCP poruke ---
+                else
+                {
+                    int received = 0;
+                    try
+                    {
+                        received = sock.Receive(recvBuffer);
+                    }
+                    catch (SocketException)
+                    {
+                        received = 0;
+                    }
+
+                    if (received == 0)
+                    {
+                        Console.WriteLine("TCP klijent se odjavio.");
+                        tcpClients.Remove(sock);
+                        sock.Close();
+                        continue;
+                    }
+
+                    if (received != 0)
+                    {
+                        string zadatakPoruka = Encoding.UTF8.GetString(recvBuffer, 0, received);
+                        Console.WriteLine($"Primljen zadatak: {zadatakPoruka}");
+                        ZadatakProjekta zadatak = ZadatakProjekta.FromString(zadatakPoruka);
+
+                        if (tcpClientUser.ContainsKey(sock))
+                        {
+                            string korisnickoIme = tcpClientUser[sock];
+                            zadaci[korisnickoIme].Add(zadatak);
+                            Console.WriteLine($"Zadatak dodat za {korisnickoIme}");
+                        }
+                        else
+                        {
+                            Console.WriteLine("Primljen zadatak od nepoznatog klijenta!");
+                        }
+                    }
+                    else
+                    {
+                        // klijent se diskonektovao
+                        Console.WriteLine("TCP klijent se odjavio.");
+                        tcpClients.Remove(sock);
+                        if (tcpClientUser.ContainsKey(sock))
+                            tcpClientUser.Remove(sock);
+                        sock.Close();
                     }
                 }
             }
         }
-        finally
-        {
-            udpServer.Close();
-            tcpListener.Close();
-        }
     }
 }
-
-
