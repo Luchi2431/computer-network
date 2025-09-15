@@ -30,6 +30,10 @@ class Program
         // Mapiranje korisnika -> zadaci
         Dictionary<string, List<ZadatakProjekta>> zadaci = new Dictionary<string, List<ZadatakProjekta>>();
 
+        //Mapiranje zaposlenih 
+        Dictionary<string, Socket> employeesConnections = new Dictionary<string, Socket>();
+        Queue<string> pendingEmployees = new Queue<string>();
+
         // Mapiranje TCP socket -> korisnickoIme
         Dictionary<Socket, string> tcpClientUser = new Dictionary<Socket, string>();
 
@@ -129,6 +133,17 @@ class Program
                             }
                         }
                     }
+                    else if (message.StartsWith("ZAPOSLENI:"))
+                    {
+                        string imeZaposlenog = message.Split(":")[1];
+                        System.Console.WriteLine($"Novi zaposleni: {imeZaposlenog}");
+
+                        pendingEmployees.Enqueue(imeZaposlenog);
+
+                        //Odgovor zaposlenom na koji tcp port moze da se nakaci
+                        string response = $"TCP_PORT:{tcpPort}";
+                        udpSocket.SendTo(Encoding.UTF8.GetBytes(response), remoteEP);
+                    }
                 }
                 // --- TCP Accept ---
                 else if (sock == tcpListener)
@@ -141,11 +156,17 @@ class Program
                     {
                         string korisnickoIme = pendingUsers.Dequeue();
                         tcpClientUser[client] = korisnickoIme;
-                        Console.WriteLine($"TCP klijent povezan: {korisnickoIme}");
+                        Console.WriteLine($"TCP menadzer povezan: {korisnickoIme}");
+                    }
+                    else if (pendingEmployees.Count > 0)
+                    {
+                        string imeZaposlenog = pendingEmployees.Dequeue();
+                        employeesConnections[imeZaposlenog] = client;
+                        Console.WriteLine($"TCP zaposleni povezan: {imeZaposlenog}");
                     }
                     else
                     {
-                        Console.WriteLine("TCP klijent povezan, ali nema pending korisnika!");
+                        System.Console.WriteLine("TCP klijent povezan, ali nema pending korisnika");
                     }
                 }
                 // --- TCP poruke ---
