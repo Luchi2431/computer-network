@@ -3,6 +3,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using Server;
 
 class Zaposleni
 {
@@ -36,10 +37,78 @@ class Zaposleni
         if (response.StartsWith("TCP_PORT:"))
         {
             int tcpPort = int.Parse(response.Split(":")[1]);
-
             //TCP deo
             Socket tcpClient = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            System.Console.WriteLine("Zaposleni povezan preko TCP-a sa Serverom");
+            try
+            {
+                tcpClient.Connect(IPAddress.Loopback, tcpPort);
+                System.Console.WriteLine("Zaposleni povezan preko TCP-a sa serverom");
+
+                //buffer za prijem poruka
+                byte[] buffer = new byte[1024];
+                while (true)
+                {
+                    try
+                    {
+                        System.Console.WriteLine("Ukucajte 1 ako zelite pregled svih zadataka");
+                        string option = Console.ReadLine() ?? "0";
+
+                        if (option == "1")
+                        {
+                            string requestMessageForTasks = $"GET_TASKS:{username}";
+                            tcpClient.Send(Encoding.UTF8.GetBytes(requestMessageForTasks));
+
+                            //Prijem poruke sa zadacima
+                            int receiver = tcpClient.Receive(buffer);
+                            if (receiver == 0)
+                            {
+                                System.Console.WriteLine("Server je prekinuo vezu");
+                                break;
+                            }
+                            string message = Encoding.UTF8.GetString(buffer, 0, receiver);
+                            if (message.StartsWith("TASKS:"))
+                            {
+                                //Obrada primljenih zadataka za prikaz
+                                string tasksData = message.Substring(6);
+                                if (tasksData == "NONE")
+                                {
+                                    System.Console.WriteLine("\n Nemate dodeljenih nezavrsenih zadataka!");
+                                }
+                                else
+                                {
+                                    System.Console.WriteLine("\n Vasi zadaci (sortirani po prioritetu):");
+                                    System.Console.WriteLine("---------------------------------------");
+                                    var tasks = tasksData.Split(";").Where(t => !string.IsNullOrWhiteSpace(t)).Select(t => ZadatakProjekta.FromString(t));
+                                    foreach (var task in tasks)
+                                    {
+                                        System.Console.WriteLine($"Naziv: {task.Naziv}");
+                                        System.Console.WriteLine($"Rok: {task.Rok:yyyy-MM-dd}");
+                                        System.Console.WriteLine($"Prioritet: {task.Prioritet}");
+                                        System.Console.WriteLine($"Status: {task.Status}");
+                                        System.Console.WriteLine("---------------------------------------");
+                                    }
+                                }
+                                System.Console.WriteLine("\n Pritisnite ENTER za nastavak");
+                                Console.ReadLine();
+                            }
+                        }
+
+                    }
+                    catch (SocketException ex)
+                    {
+                        System.Console.WriteLine($"Greska pri komunikaciji: {ex.Message}");
+                        break;
+                    }
+                }
+            }
+            catch (SocketException ex)
+            {
+                System.Console.WriteLine($"Greska pri povezivanju: {ex.Message}");
+            }
+            finally
+            {
+                tcpClient.Close();
+            }
         }
     }
 

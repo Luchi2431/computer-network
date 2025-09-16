@@ -192,13 +192,38 @@ class Program
 
                     if (received != 0)
                     {
-                        string zadatakPoruka = Encoding.UTF8.GetString(recvBuffer, 0, received);
-                        Console.WriteLine($"Primljen zadatak: {zadatakPoruka}");
-                        ZadatakProjekta zadatak = ZadatakProjekta.FromString(zadatakPoruka);
+                        string receivedMessage = Encoding.UTF8.GetString(recvBuffer, 0, received);
+                        Console.WriteLine($"Primljen zadatak: {receivedMessage}");
 
-                        if (tcpClientUser.ContainsKey(sock))
+                        //GET_TASKS Od Zaposlenog
+                        if (receivedMessage.StartsWith("GET_TASKS:"))
+                        {
+                            string employeeName = receivedMessage.Split(":")[1];
+                            System.Console.WriteLine($"Zahtev za zadatke od: {employeeName}");
+
+                            //Svi zadaci za tog zaposlenog
+                            var assignedTasks = new List<ZadatakProjekta>();
+                            foreach (var managerTasks in zadaci.Values)
+                            {
+                                assignedTasks.AddRange(managerTasks.Where(z => z.Zaposleni == employeeName && z.Status != Shared.Status.Zavrsen));
+                            }
+                            assignedTasks = assignedTasks.OrderBy(z => z.Prioritet).ToList();
+
+                            string response;
+                            if (assignedTasks.Count == 0)
+                            {
+                                response = "TASKS:NONE";
+                            }
+                            else
+                            {
+                                response = "TASKS:" + string.Join(";", assignedTasks.Select(z => z.ToString()));
+                            }
+                            sock.Send(Encoding.UTF8.GetBytes(response));
+                        }
+                        else if (tcpClientUser.ContainsKey(sock))
                         {
                             string korisnickoIme = tcpClientUser[sock];
+                            ZadatakProjekta zadatak = ZadatakProjekta.FromString(receivedMessage);
                             zadaci[korisnickoIme].Add(zadatak);
                             Console.WriteLine($"Zadatak dodat za {korisnickoIme}");
                         }
