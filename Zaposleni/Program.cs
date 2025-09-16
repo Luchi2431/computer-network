@@ -51,6 +51,7 @@ class Zaposleni
                     try
                     {
                         System.Console.WriteLine("Ukucajte 1 ako zelite pregled svih zadataka");
+                        System.Console.WriteLine("Ukucaj 2 ako zelis da kompletiras neki zadatak");
                         string option = Console.ReadLine() ?? "0";
 
                         if (option == "1")
@@ -92,7 +93,44 @@ class Zaposleni
                                 Console.ReadLine();
                             }
                         }
+                        else if (option == "2")
+                        {
+                            System.Console.WriteLine("Unesite ime zadatka koji zelite da zapocnete");
+                            string taskName = Console.ReadLine() ?? string.Empty;
 
+                            //Prvo postavimo zadatak u stanje "u toku"
+                            string startRequest = $"START_TASK:{taskName}";
+                            tcpClient.Send(Encoding.UTF8.GetBytes(startRequest));
+
+                            //Cekamo portvdu
+                            received = tcpClient.Receive(buffer);
+                            response = Encoding.UTF8.GetString(buffer, 0, received);
+
+                            if (response == "STATUS:OK")
+                            {
+                                System.Console.WriteLine("Zadatak je zapocet. Da li zelite da ga oznacite kao zavrsen? (da/ne)");
+                                string choice = Console.ReadLine()?.ToLower() ?? "ne";
+
+                                if (choice == "da")
+                                {
+                                    string completeRequest = taskName + ":Zavrsen";
+                                    tcpClient.Send(Encoding.UTF8.GetBytes(completeRequest));
+
+                                    //Cekamo potvrdu
+                                    received = tcpClient.Receive(buffer);
+                                    response = Encoding.UTF8.GetString(buffer, 0, received);
+
+                                    if (response == "STATUS:OK")
+                                    {
+                                        System.Console.WriteLine("Zadatak je uspesno izvrsen");
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                System.Console.WriteLine("Greska pri obradi zadatka.");
+                            }
+                        }
                     }
                     catch (SocketException ex)
                     {

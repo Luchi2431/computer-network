@@ -220,6 +220,42 @@ class Program
                             }
                             sock.Send(Encoding.UTF8.GetBytes(response));
                         }
+                        else if (receivedMessage.Contains(":Zavrsen"))
+                        {
+                            string taskName = receivedMessage.Split(":")[0];
+                            System.Console.WriteLine($"Zahtev za zavrsetak zadatka: {taskName}");
+
+                            //Pronadji zadatak 
+                            foreach (var managerTasks in zadaci.Values)
+                            {
+                                var task = managerTasks.FirstOrDefault(z => z.Naziv == taskName);
+                                if (task != null)
+                                {
+                                    task.Status = Shared.Status.Zavrsen;
+                                    System.Console.WriteLine($"Zadatak {taskName} oznacen kao ZAVRSEN!");
+                                    string response = $"STATUS:OK";
+                                    sock.Send(Encoding.UTF8.GetBytes(response));
+                                    break;
+                                }
+                            }
+                        }
+                        else if (receivedMessage.StartsWith("START_TASK:"))
+                        {
+                            string taskName = receivedMessage.Split(":")[1];
+                            //Pronadji zadatak u Listi zadataka
+                            foreach (var managerTasks in zadaci.Values)
+                            {
+                                var task = managerTasks.FirstOrDefault(z => z.Naziv == taskName);
+                                if (task != null)
+                                {
+                                    task.Status = Shared.Status.UToku;
+                                    System.Console.WriteLine($"Zadatak {taskName} je zapocet");
+                                    string response = $"STATUS:OK";
+                                    sock.Send(Encoding.UTF8.GetBytes(response));
+                                    break;
+                                }
+                            }
+                        }
                         else if (tcpClientUser.ContainsKey(sock))
                         {
                             string korisnickoIme = tcpClientUser[sock];

@@ -14,7 +14,7 @@ public class ZadatakProjekta
 
     public override string ToString()
     {
-        return $"{Naziv}|{Zaposleni}|{Rok:yyyy-MM-dd}|{Prioritet}";
+        return $"{Naziv}|{Zaposleni}|{Rok:yyyy-MM-dd}|{Prioritet}|{Status}";
     }
 
     public static ZadatakProjekta FromString(string s)
@@ -26,6 +26,7 @@ public class ZadatakProjekta
             Zaposleni = parts[1],
             Rok = DateTime.Parse(parts[2]),
             Prioritet = int.Parse(parts[3]),
+            Status = Enum.Parse<Status>(parts[4])
         };
     }
 

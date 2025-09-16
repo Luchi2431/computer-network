@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using Shared;
 
 class Manadzer
 {
@@ -60,7 +61,7 @@ class Manadzer
             System.Console.WriteLine("Prioritet (int)");
             string prioritet = Console.ReadLine() ?? string.Empty;
 
-            string zadatakPoruka = $"{naziv}|{zaposleni}|{rok}|{prioritet}";
+            string zadatakPoruka = $"{naziv}|{zaposleni}|{rok}|{prioritet}|{Status.NaCekanju}";
             tcpClient.Send(Encoding.UTF8.GetBytes(zadatakPoruka));
 
             System.Console.WriteLine("Zadatak poslat serveru");
