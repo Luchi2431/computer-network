@@ -1,13 +1,10 @@
-﻿// See https://aka.ms/new-console-template for more information
-
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using Server;
 
 class Zaposleni
 {
-    private const string ZAPOSLENI_FILE = "zaposleni.txt";
     private const int UDP_PORT = 9000;
     static void Main()
     {
@@ -152,17 +149,16 @@ class Zaposleni
 
     static string GetUsername()
     {
-        string imeZaposlenog = string.Empty;
-        if (File.Exists(ZAPOSLENI_FILE))
+        System.Console.WriteLine("Unesite vase korisnickog ime:");
+        string username = Console.ReadLine() ?? string.Empty;
+        string filePath = $"Zaposleni-{username}.txt";
+        if (File.Exists(filePath))
         {
-            imeZaposlenog = File.ReadAllText(ZAPOSLENI_FILE);
-            System.Console.WriteLine($"Dobrodosli nazad: {imeZaposlenog}");
-            return imeZaposlenog;
+            username = File.ReadAllText(filePath);
+            System.Console.WriteLine($"Dobrodosli nazad: {username}");
+            return username;
         }
-        System.Console.WriteLine("Unesite ime zaposlenog");
-        imeZaposlenog = Console.ReadLine() ?? string.Empty;
-        File.WriteAllText(ZAPOSLENI_FILE, imeZaposlenog);
-        return imeZaposlenog;
+        File.WriteAllText(filePath, username);
+        return username;
     }
-
 }
