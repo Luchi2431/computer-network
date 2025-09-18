@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices.Marshalling;
 using System.Text;
 using Server;
 
@@ -48,7 +49,7 @@ class Zaposleni
                     try
                     {
                         System.Console.WriteLine("Ukucajte 1 ako zelite pregled svih zadataka");
-                        System.Console.WriteLine("Ukucaj 2 ako zelis da kompletiras neki zadatak");
+                        System.Console.WriteLine("Ukucajte 2 ako zelis da kompletiras neki zadatak");
                         string option = Console.ReadLine() ?? "0";
 
                         if (option == "1")
@@ -96,7 +97,7 @@ class Zaposleni
                             string taskName = Console.ReadLine() ?? string.Empty;
 
                             //Prvo postavimo zadatak u stanje "u toku"
-                            string startRequest = $"START_TASK:{taskName}";
+                            string startRequest = $"POCNI_ZADATAK:{taskName}";
                             tcpClient.Send(Encoding.UTF8.GetBytes(startRequest));
 
                             //Cekamo portvdu
@@ -107,10 +108,18 @@ class Zaposleni
                             {
                                 System.Console.WriteLine("Zadatak je zapocet. Da li zelite da ga oznacite kao zavrsen? (da/ne)");
                                 string choice = Console.ReadLine()?.ToLower() ?? "ne";
-
                                 if (choice == "da")
                                 {
                                     string completeRequest = taskName + ":Zavrsen";
+                                    System.Console.WriteLine("Da li zelite da dodate komentar uz zadatak? (da/ne)");
+                                    string commentChoice = Console.ReadLine()?.ToLower() ?? string.Empty;
+                                    if (commentChoice == "da")
+                                    {
+                                        System.Console.WriteLine("Unesite komentar za zadatak");
+                                        string comment = Console.ReadLine() ?? string.Empty;
+                                        completeRequest += $"|{comment}";
+                                    }
+
                                     tcpClient.Send(Encoding.UTF8.GetBytes(completeRequest));
 
                                     //Cekamo potvrdu
@@ -119,7 +128,7 @@ class Zaposleni
 
                                     if (response == "STATUS:OK")
                                     {
-                                        System.Console.WriteLine("Zadatak je uspesno izvrsen");
+                                        System.Console.WriteLine("Zadatak je uspesno izvrsen\n");
                                     }
                                 }
                             }

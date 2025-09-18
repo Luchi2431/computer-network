@@ -86,15 +86,26 @@ class Manadzer
                         received = udpClientSocket.ReceiveFrom(buffer, ref remoteEP);
                         string tasksStr = Encoding.UTF8.GetString(buffer, 0, received);
 
-                        System.Console.WriteLine("\n Pregled zadataka 'U Toku':");
                         //Razdeli string na delove i prikazi zadatke
                         string[] lines = tasksStr.Split("\n");
                         foreach (var line in lines)
                         {
                             if (string.IsNullOrWhiteSpace(line)) continue;
+
                             try
                             {
                                 var zadatak = ZadatakProjekta.FromString(line);
+                                //Svi dodati zadaci
+                                System.Console.WriteLine("Svi zadaci ovog Menadzera");
+                                System.Console.WriteLine(zadatak.ToString());
+
+                                if (zadatak.Status == Status.Zavrsen && !string.IsNullOrWhiteSpace(zadatak.Komentar))
+                                {
+                                    Console.ForegroundColor = ConsoleColor.Green;
+                                    System.Console.WriteLine($"{zadatak.Naziv} (Zavrsio: {zadatak.Zaposleni}) -> Komentar: {zadatak.Komentar}");
+                                    Console.ResetColor();
+                                }
+
                                 int daysLeft = (zadatak.Rok - DateTime.Now).Days;
                                 if (daysLeft < 2)
                                 {
@@ -114,9 +125,12 @@ class Manadzer
 
                                     }
                                 }
-                                else
+                                else if (zadatak.Status == Status.UToku)
                                 {
-                                    System.Console.WriteLine($"{zadatak.Naziv} za {zadatak.Zaposleni} (rok: {zadatak.Rok:yyyy-MM-dd})");
+                                    System.Console.WriteLine("\n Pregled zadataka 'U Toku':");
+                                    Console.ForegroundColor = ConsoleColor.Blue;
+                                    System.Console.WriteLine($"Naziv zadatka: {zadatak.Naziv} za {zadatak.Zaposleni} (rok: {zadatak.Rok:yyyy-MM-dd})");
+                                    Console.ResetColor();
                                 }
                             }
                             catch (System.Exception ex)

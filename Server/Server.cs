@@ -222,7 +222,10 @@ class Program
                         }
                         else if (receivedMessage.Contains(":Zavrsen"))
                         {
-                            string taskName = receivedMessage.Split(":")[0];
+                            string[] parts = receivedMessage.Split("|");
+                            string taskPart = parts[0]; // Naziv:Zavrsen
+                            string taskName = taskPart.Split(":")[0];
+                            string comment = parts.Length > 1 ? parts[1] : string.Empty;
                             System.Console.WriteLine($"Zahtev za zavrsetak zadatka: {taskName}");
 
                             //Pronadji zadatak 
@@ -232,17 +235,20 @@ class Program
                                 if (task != null)
                                 {
                                     task.Status = Shared.Status.Zavrsen;
-                                    System.Console.WriteLine($"Zadatak {taskName} oznacen kao ZAVRSEN!");
+                                    task.Komentar = comment;
+
+                                    System.Console.WriteLine(task);
+                                    System.Console.WriteLine($"Zadatak {task.Naziv} oznacen kao ZAVRSEN! Komentar: {task.Komentar}");
                                     string response = $"STATUS:OK";
                                     sock.Send(Encoding.UTF8.GetBytes(response));
                                     break;
                                 }
                             }
                         }
-                        else if (receivedMessage.StartsWith("START_TASK:"))
+                        else if (receivedMessage.StartsWith("POCNI_ZADATAK:"))
                         {
                             string taskName = receivedMessage.Split(":")[1];
-                            //Pronadji zadatak u Listi zadataka
+                            //Pronadji zadatak u Listi zadataka 
                             foreach (var managerTasks in zadaci.Values)
                             {
                                 var task = managerTasks.FirstOrDefault(z => z.Naziv == taskName);
