@@ -53,8 +53,8 @@ class Manadzer
             while (true)
             {
                 System.Console.WriteLine("\nKliknite 1 ako zelite da unesete novi zadatak");
-                System.Console.WriteLine("Kliknite 0 ako zelite da izadjete iz menija");
-                System.Console.WriteLine("Kliknite 2 ako zelite pregled svih zadataka\n");
+                System.Console.WriteLine("Kliknite 2 ako zelite pregled svih zadataka");
+                System.Console.WriteLine("Kliknite 0 ako zelite da izadjete iz menija\n");
                 string option = Console.ReadLine() ?? "0";
                 switch (option)
                 {
@@ -88,6 +88,7 @@ class Manadzer
 
                         //Razdeli string na delove i prikazi zadatke
                         string[] lines = tasksStr.Split("\n");
+                        System.Console.WriteLine("Svi zadaci ovog Menadzera");
                         foreach (var line in lines)
                         {
                             if (string.IsNullOrWhiteSpace(line)) continue;
@@ -95,36 +96,16 @@ class Manadzer
                             try
                             {
                                 var zadatak = ZadatakProjekta.FromString(line);
-                                //Svi dodati zadaci
-                                System.Console.WriteLine("Svi zadaci ovog Menadzera");
-                                System.Console.WriteLine(zadatak.ToString());
 
+
+                                //Pregled zadataka sa komentarom
                                 if (zadatak.Status == Status.Zavrsen && !string.IsNullOrWhiteSpace(zadatak.Komentar))
                                 {
                                     Console.ForegroundColor = ConsoleColor.Green;
                                     System.Console.WriteLine($"{zadatak.Naziv} (Zavrsio: {zadatak.Zaposleni}) -> Komentar: {zadatak.Komentar}");
                                     Console.ResetColor();
                                 }
-
-                                int daysLeft = (zadatak.Rok - DateTime.Now).Days;
-                                if (daysLeft < 2)
-                                {
-                                    Console.BackgroundColor = ConsoleColor.Yellow;
-                                    System.Console.WriteLine($"!!!{zadatak.Naziv} za {zadatak.Zaposleni} (rok: {zadatak.Rok:yyyy-MM-dd}, ostalo {daysLeft} dana)");
-                                    Console.ResetColor();
-                                    //Slanje zahteva za promenu roka isteka zadatka
-                                    if (zadatak.Prioritet < 1)
-                                    {
-                                        System.Console.WriteLine("Unesite novi rok u formatu (yyyy-MM-dd)");
-                                        string newRok = Console.ReadLine() ?? string.Empty;
-                                        if (!string.IsNullOrEmpty(newRok))
-                                        {
-                                            string produzenje = $"PRODUZENJE:{zadatak.Naziv}:{newRok}";
-                                            udpClientSocket.SendTo(Encoding.UTF8.GetBytes(produzenje), serverEP);
-                                        }
-
-                                    }
-                                }
+                                //Pregled zadataka u toku
                                 else if (zadatak.Status == Status.UToku)
                                 {
                                     System.Console.WriteLine("\n Pregled zadataka 'U Toku':");
@@ -132,10 +113,31 @@ class Manadzer
                                     System.Console.WriteLine($"Naziv zadatka: {zadatak.Naziv} za {zadatak.Zaposleni} (rok: {zadatak.Rok:yyyy-MM-dd})");
                                     Console.ResetColor();
                                 }
+                                else
+                                {
+                                    System.Console.WriteLine(zadatak.ToString());
+                                    int daysLeft = (zadatak.Rok - DateTime.Now).Days;
+                                    if (daysLeft < 2)
+                                    {
+                                        Console.BackgroundColor = ConsoleColor.Yellow;
+                                        System.Console.WriteLine($"\n!!!{zadatak.Naziv} za {zadatak.Zaposleni} (rok: {zadatak.Rok:yyyy-MM-dd}, ostalo {daysLeft} dana)");
+                                        Console.ResetColor();
+                                        //Slanje zahteva za promenu roka isteka zadatka
+                                        if (zadatak.Prioritet < 1)
+                                        {
+                                            System.Console.WriteLine("Unesite novi rok u formatu (yyyy-MM-dd)");
+                                            string newRok = Console.ReadLine() ?? string.Empty;
+                                            if (!string.IsNullOrEmpty(newRok))
+                                            {
+                                                string produzenje = $"PRODUZENJE:{zadatak.Naziv}:{newRok}";
+                                                udpClientSocket.SendTo(Encoding.UTF8.GetBytes(produzenje), serverEP);
+                                            }
+                                        }
+                                    }
+                                }
                             }
                             catch (System.Exception ex)
                             {
-
                                 System.Console.WriteLine($"Ne mogu da parsiram zadatak: {line}({ex.Message})");
                             }
                         }

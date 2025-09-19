@@ -1,6 +1,5 @@
 ﻿using System.Net;
 using System.Net.Sockets;
-using System.Runtime.InteropServices.Marshalling;
 using System.Text;
 using Server;
 
@@ -40,7 +39,7 @@ class Zaposleni
             try
             {
                 tcpClient.Connect(IPAddress.Loopback, tcpPort);
-                System.Console.WriteLine("Zaposleni povezan preko TCP-a sa serverom");
+                System.Console.WriteLine("Zaposleni povezan preko TCP-a sa serverom\n");
 
                 //buffer za prijem poruka
                 byte[] buffer = new byte[1024];
@@ -87,7 +86,7 @@ class Zaposleni
                                         System.Console.WriteLine("---------------------------------------");
                                     }
                                 }
-                                System.Console.WriteLine("\n Pritisnite ENTER za nastavak");
+                                System.Console.WriteLine("\n Pritisnite ENTER za povratak na meni");
                                 Console.ReadLine();
                             }
                         }

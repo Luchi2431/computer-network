@@ -1,9 +1,6 @@
-﻿using System;
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Collections.Generic;
-using System.Linq;
 using Server;
 
 class Program
@@ -27,12 +24,8 @@ class Program
         // Za praćenje TCP klijenata
         List<Socket> tcpClients = new List<Socket>();
 
-        // Mapiranje korisnika -> zadaci
+        // Cuvanje Menadzera i njegovih zadataka
         Dictionary<string, List<ZadatakProjekta>> zadaci = new Dictionary<string, List<ZadatakProjekta>>();
-
-        //Mapiranje zaposlenih 
-        Dictionary<string, Socket> employeesConnections = new Dictionary<string, Socket>();
-        Queue<string> pendingEmployees = new Queue<string>();
 
         // Mapiranje TCP socket -> korisnickoIme
         Dictionary<Socket, string> tcpClientUser = new Dictionary<Socket, string>();
@@ -40,6 +33,8 @@ class Program
         // Privremeno čuvamo korisnika koji je poslao MENADZER: preko UDP-a,
         // a tek se posle povezuje na TCP
         Queue<string> pendingUsers = new Queue<string>();
+        //Mapiranje zaposlenih 
+        Queue<string> pendingEmployees = new Queue<string>();
 
         byte[] recvBuffer = new byte[1024];
 
@@ -99,7 +94,7 @@ class Program
 
                         if (!zadaci.ContainsKey(korisnickoIme) || zadaci[korisnickoIme].Count == 0)
                         {
-                            string odgovor = "Nema zadataka u toku";
+                            string odgovor = "Nema zadataka";
                             udpSocket.SendTo(Encoding.UTF8.GetBytes(odgovor), remoteEP);
                         }
                         else
@@ -108,7 +103,6 @@ class Program
                             foreach (var zad in zadaci[korisnickoIme])
                             {
                                 sb.AppendLine(zad.ToString());
-                                // svaki zadatak si već čuvao kao string "naziv|zaposleni|rok|prioritet"
                             }
                             udpSocket.SendTo(Encoding.UTF8.GetBytes(sb.ToString()), remoteEP);
                         }
@@ -161,7 +155,7 @@ class Program
                     else if (pendingEmployees.Count > 0)
                     {
                         string imeZaposlenog = pendingEmployees.Dequeue();
-                        employeesConnections[imeZaposlenog] = client;
+                        tcpClientUser[client] = imeZaposlenog;
                         Console.WriteLine($"TCP zaposleni povezan: {imeZaposlenog}");
                     }
                     else
