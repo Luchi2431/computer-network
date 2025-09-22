@@ -73,6 +73,7 @@ class Program
                     int received = udpSocket.ReceiveFrom(recvBuffer, ref remoteEP);
                     string message = Encoding.UTF8.GetString(recvBuffer, 0, received);
 
+                    //Povezivanje Menadzera na server sa TCP-jem
                     if (message.StartsWith("MENADZER:"))
                     {
                         string korisnickoIme = message.Split(':')[1];
@@ -88,6 +89,7 @@ class Program
                         string odgovor = $"TCP_PORT:{tcpPort}";
                         udpSocket.SendTo(Encoding.UTF8.GetBytes(odgovor), remoteEP);
                     }
+                    //Pregled zadataka
                     else if (message.StartsWith("PREGLED:"))
                     {
                         string korisnickoIme = message.Split(':')[1];
@@ -107,6 +109,7 @@ class Program
                             udpSocket.SendTo(Encoding.UTF8.GetBytes(sb.ToString()), remoteEP);
                         }
                     }
+                    //Produzenje roka izrade zadatka
                     else if (message.StartsWith("PRODUZENJE:"))
                     {
                         string[] parts = message.Split(":");
@@ -214,6 +217,7 @@ class Program
                             }
                             sock.Send(Encoding.UTF8.GetBytes(response));
                         }
+                        //Zavrsetak zadatka od zaposlenog
                         else if (receivedMessage.Contains(":Zavrsen"))
                         {
                             string[] parts = receivedMessage.Split("|");
@@ -256,6 +260,7 @@ class Program
                                 }
                             }
                         }
+                        //Dodavanje zadatka od menadzers
                         else if (tcpClientUser.ContainsKey(sock))
                         {
                             string korisnickoIme = tcpClientUser[sock];
@@ -270,7 +275,7 @@ class Program
                     }
                     else
                     {
-                        // klijent se diskonektovao
+                        //Klijent se diskonektovao
                         Console.WriteLine("TCP klijent se odjavio.");
                         tcpClients.Remove(sock);
                         if (tcpClientUser.ContainsKey(sock))

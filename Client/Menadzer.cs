@@ -58,13 +58,14 @@ class Manadzer
                 string option = Console.ReadLine() ?? "0";
                 switch (option)
                 {
+                    //Izlazak iz Menija
                     case "0":
                         System.Console.WriteLine("TCP Konekcija prekinuta");
                         udpClientSocket.Close();
                         tcpClient.Close();
                         return;
+                    //Kreiranje zadatka
                     case "1":
-                        //Kreiranje zadatka
                         System.Console.WriteLine("Naziv zadatka:");
                         string naziv = Console.ReadLine() ?? string.Empty;
                         System.Console.WriteLine("Zaposleni:");
@@ -78,8 +79,8 @@ class Manadzer
                         tcpClient.Send(Encoding.UTF8.GetBytes(zadatakPoruka));
                         System.Console.WriteLine("Zadatak poslat serveru\n");
                         break;
+                    //Pregled zadataka
                     case "2":
-                        //PREGLED ZADATKA
                         string pregledPoruke = $"PREGLED:{username}";
                         udpClientSocket.SendTo(Encoding.UTF8.GetBytes(pregledPoruke), serverEP);
 
@@ -125,7 +126,7 @@ class Manadzer
                                         //Slanje zahteva za promenu roka isteka zadatka
                                         if (zadatak.Prioritet < 1)
                                         {
-                                            System.Console.WriteLine("Unesite novi rok u formatu (yyyy-MM-dd)");
+                                            System.Console.WriteLine("Unesite novi rok u formatu (yyyy-MM-dd):");
                                             string newRok = Console.ReadLine() ?? string.Empty;
                                             if (!string.IsNullOrEmpty(newRok))
                                             {
